@@ -1,5 +1,3 @@
-// corpse_manager.c
-
 class CorpseManager
 {
     static ref array<CorpseData> loadedCorpses;  // Array to hold loaded corpses
@@ -54,7 +52,7 @@ class CorpseManager
             CorpseData corpse = loadedCorpses[i];
             
             // Check if the corpse is expired based on the lifetime (using config value)
-            if (GetGame().GetTime() - corpse.timestamp > PersistentCorpsesConfig.GetInstance().corpseLifetime)
+            if (GetGame().GetTime() - corpse.timestamp > PersistentCorpsesConfig.corpseLifetime)
             {
                 // Skip expired corpses
                 Print("[PersistentCorpses] Skipping expired corpse at position: " + corpse.position.ToString());
@@ -66,100 +64,59 @@ class CorpseManager
     }
 
     // Method to spawn a corpse at a specific location
-static void SpawnCorpse(CorpseData corpse)
-{
-    vector spawnPosition = corpse.position;
-
-    // Create the corpse object in the world
-    Print("[PersistentCorpses] Spawning corpse at position: " + spawnPosition.ToString());
-
-    EntityAI spawnedCorpse = GetGame().CreateObject(corpse.characterType, spawnPosition, false, true);
-
-    // Restore items by looping through the stored item names
-    for (int i = 0; i < corpse.inventory.Count(); i++)
+    static void SpawnCorpse(CorpseData corpse)
     {
-        string itemName = corpse.inventory[i];
-        Print("[PersistentCorpses] Restoring item: " + itemName);
+        vector spawnPosition = corpse.position;
 
-        // Restore the item to the corpse's inventory
-        EntityAI itemEntity = EntityAI.Cast(spawnedCorpse.GetInventory().CreateInInventory(itemName));
-        if (itemEntity) {
-            // Optionally, restore item properties like durability, quantity, etc.
+        // Create the corpse object in the world
+        Print("[PersistentCorpses] Spawning corpse at position: " + spawnPosition.ToString());
+
+        EntityAI spawnedCorpse = GetGame().CreateObject(corpse.characterType, spawnPosition, false, true);
+
+        // Restore items by looping through the stored item names
+        for (int i = 0; i < corpse.inventory.Count(); i++)
+        {
+            string itemName = corpse.inventory[i];
+            Print("[PersistentCorpses] Restoring item: " + itemName);
+
+            // Restore the item to the corpse's inventory
+            EntityAI itemEntity = EntityAI.Cast(spawnedCorpse.GetInventory().CreateInInventory(itemName));
+            if (itemEntity) {
+                // Optionally, restore item properties like durability, quantity, etc.
+            }
         }
     }
-}
 
     // Capture the player's inventory when they die and store it as a corpse
-static void OnPlayerDeath(PlayerBase player)
-{
-    // Get player name and character type
-    string playerName = player.GetIdentity().GetName();
-    string characterType = player.GetType();
-    
-    // Retrieve the player's inventory
-    array<string> itemNames = new array<string>();
-    array<EntityAI> items = new array<EntityAI>();
-    player.GetInventory().EnumerateInventory(InventoryTraversalType.PREORDER, items);
-    
-    for (int i = 0; i < items.Count(); i++)
+    static void OnPlayerDeath(PlayerBase player)
     {
-        EntityAI item = items.Get(i);
-        if (item && item.GetType() != "")
+        // Get player name and character type
+        string playerName = player.GetIdentity().GetName();
+        string characterType = player.GetType();
+        
+        // Retrieve the player's inventory
+        array<string> itemNames = new array<string>();
+        array<EntityAI> items = new array<EntityAI>();
+        player.GetInventory().EnumerateInventory(InventoryTraversalType.PREORDER, items);
+        
+        for (int i = 0; i < items.Count(); i++)
         {
-            itemNames.Insert(item.GetType());
+            EntityAI item = items.Get(i);
+            if (item && item.GetType() != "")
+            {
+                itemNames.Insert(item.GetType());
+            }
         }
-    }
 
-    // Create the corpse data
-    vector position = player.GetPosition();
-    int timestamp = GetGame().GetTime();
-    CorpseData corpse = new CorpseData(position, playerName, characterType, itemNames, timestamp);
+        // Create the corpse data
+        vector position = player.GetPosition();
+        int timestamp = GetGame().GetTime();
+        CorpseData corpse = new CorpseData(position, playerName, characterType, itemNames, timestamp);
 
-    // Save this corpse data
-    loadedCorpses.Insert(corpse);
-    SaveCorpse(corpse);
-    
-    Print("[PersistentCorpses] Saved corpse for player: " + playerName);
-}
-
-// Data structure for storing corpse data (position, items)
-class CorpseData
-{
-    vector position;  // Position of the corpse in the world
-    ref array<string> items;  // Items inside the corpse (dynamic)
-    string characterType;  // Type of the character for restoring (e.g., SurvivorM_Mirek)
-    int timestamp;  // Timestamp of when the corpse was created (used for expiration check)
-
-    void CorpseData(vector pos, array<string> itemList, int time)
-    {
-        position = pos;
-        items = itemList;
-        characterType = "SurvivorM_Mirek"; // Default character type, can be modified
-        timestamp = time;
-    }
-
-    // Serialize the corpse data (to JSON)
-    string Serialize()
-    {
-        ref map<string, ref array<string>> dataMap = new map<string, ref array<string>>;
-        dataMap["position"] = new array<string>{position.ToString()};
-        dataMap["items"] = items;
-        dataMap["timestamp"] = new array<string>{timestamp.ToString()};
-
-        JsonSerializer jsonSerializer = new JsonSerializer();
-        return jsonSerializer.Serialize(dataMap);
-    }
-
-    // Deserialize the corpse data from JSON (Corrected code)
-    static ref CorpseData Deserialize(string serializedData)
-    {
-        JsonSerializer jsonSerializer = new JsonSerializer();
-        ref map<string, ref array<string>> jsonData = jsonSerializer.Deserialize(serializedData);
-
-        vector pos = vector.Parse(jsonData["position"][0]);
-        ref array<string> itemList = jsonData["items"];
-        int time = jsonData["timestamp"][0].ToInt();
-
-        return new CorpseData(pos, itemList, time);
+        // Save this corpse data
+        loadedCorpses.Insert(corpse);
+        SaveCorpse(corpse);
+        
+        Print("[PersistentCorpses] Saved corpse for player: " + playerName);
     }
 }
