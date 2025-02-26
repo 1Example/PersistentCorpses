@@ -1,6 +1,6 @@
 class CorpseManager
 {
-    static ref array<ref CorpseData> loadedCorpses;  // Changed to ref CorpseData
+    static ref array<ref PCCorpseData> loadedCorpses;
     static string CORPSE_SAVE_PATH = "$profile:PersistentCorpses/corpse_data.json";
 
     static void OnInit()
@@ -9,7 +9,7 @@ class CorpseManager
         
         Print("[PersistentCorpses] Loading corpse persistence system...");
         
-        loadedCorpses = new array<ref CorpseData>();
+        loadedCorpses = new array<ref PCCorpseData>();
 
         GetGame().GetCallQueue(CALL_CATEGORY_SYSTEM).CallLater(CorpseManager.LoadFromDisk, 1000, false);
         GetGame().GetCallQueue(CALL_CATEGORY_SYSTEM).CallLater(CorpseManager.RestoreCorpses, 2000, false);
@@ -22,11 +22,11 @@ class CorpseManager
         if (FileExist(CORPSE_SAVE_PATH))
         {
             if (!loadedCorpses)
-                loadedCorpses = new array<ref CorpseData>();
+                loadedCorpses = new array<ref PCCorpseData>();
             else
                 loadedCorpses.Clear();
                 
-            JsonFileLoader<array<ref CorpseData>>.JsonLoadFile(CORPSE_SAVE_PATH, loadedCorpses);
+            JsonFileLoader<array<ref PCCorpseData>>.JsonLoadFile(CORPSE_SAVE_PATH, loadedCorpses);
             Print("[PersistentCorpses] Loaded " + loadedCorpses.Count() + " corpses.");
         }
     }
@@ -40,13 +40,13 @@ class CorpseManager
             MakeDirectory("$profile:PersistentCorpses/");
             
         // Save all corpses to disk
-        JsonFileLoader<array<ref CorpseData>>.JsonSaveFile(CORPSE_SAVE_PATH, loadedCorpses);
+        JsonFileLoader<array<ref PCCorpseData>>.JsonSaveFile(CORPSE_SAVE_PATH, loadedCorpses);
     }
 
-    static void SaveCorpse(ref CorpseData corpse)
+    static void SaveCorpse(ref PCCorpseData corpse)
     {
         if (!loadedCorpses)
-            loadedCorpses = new array<ref CorpseData>();
+            loadedCorpses = new array<ref PCCorpseData>();
             
         loadedCorpses.Insert(corpse);
         SaveToDisk();
@@ -59,11 +59,11 @@ class CorpseManager
         if (!loadedCorpses)
             return;
 
-        array<ref CorpseData> validCorpses = new array<ref CorpseData>();
+        array<ref PCCorpseData> validCorpses = new array<ref PCCorpseData>();
             
         for (int i = 0; i < loadedCorpses.Count(); i++)
         {
-            ref CorpseData corpse = loadedCorpses.Get(i);
+            ref PCCorpseData corpse = loadedCorpses.Get(i);
             
             // Check if the corpse is expired
             if (corpse.IsExpired())
@@ -81,7 +81,7 @@ class CorpseManager
         SaveToDisk();
     }
 
-    static void SpawnCorpse(ref CorpseData corpse)
+    static void SpawnCorpse(ref PCCorpseData corpse)
     {
         vector spawnPosition = corpse.position;
 
@@ -127,7 +127,7 @@ class CorpseManager
 
         vector position = player.GetPosition();
         int timestamp = GetGame().GetTime();
-        ref CorpseData corpse = new CorpseData(position, playerName, characterType, itemNames, timestamp);
+        ref PCCorpseData corpse = new PCCorpseData(position, playerName, characterType, itemNames, timestamp);
 
         SaveCorpse(corpse);
         Print("[PersistentCorpses] Saved corpse for player: " + playerName);

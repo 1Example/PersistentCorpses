@@ -1,4 +1,4 @@
-class CorpseData
+class PCCorpseData
 {
     vector position;             
     string playerName;           
@@ -6,7 +6,7 @@ class CorpseData
     ref array<string> inventory; 
     int timestamp;               
 
-    void CorpseData(vector pos, string name, string type, array<string> inv, int time)
+    void PCCorpseData(vector pos, string name, string type, array<string> inv, int time)
     {
         position = pos;
         playerName = name;
